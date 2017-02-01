@@ -15,19 +15,23 @@
 *   License along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
+var fs = require('fs');
+var when = require('when');
+var path = require('path');
+var ursa = require('ursa');
+var net = require('net');
+
+var EventEmitter = require('events');
+var crypto = require('crypto');
+
+var logger = require('../lib/logger.js');
+var utilities = require('../lib/utilities.js');
+
 var settings = require('../settings.js');
+
 var CryptoLib = require('../lib/ICrypto.js');
 var SparkCore = require('../clients/SparkCore.js');
 var EventPublisher = require('../lib/EventPublisher.js');
-var utilities = require('../lib/utilities.js');
-var logger = require('../lib/logger.js');
-var crypto = require('crypto');
-var ursa = require('ursa');
-var when = require('when');
-var path = require('path');
-var net = require('net');
-var fs = require('fs');
-
 
 var DeviceServer = function (options) {
     this.options = options;
@@ -37,6 +41,8 @@ var DeviceServer = function (options) {
     this._allCoresByID = {};
     this._attribsByID = {};
     this._allIDs = {};
+
+    this.ee = new EventEmitter();
 
     this.init();
 };
@@ -216,6 +222,10 @@ DeviceServer.prototype = {
                                 product_id: this.spark_product_id,
                                 firmware_version: this.product_firmware_version
                             };
+
+                            setTimeout(function() {
+                              that.ee.emit('dev:connect', that._attribsByID[coreid]);
+                            }, 0);
                         });
                         core.on('disconnect', function (msg) {
                             logger.log("Session ended for " + core._connection_key);
