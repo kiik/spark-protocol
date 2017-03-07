@@ -17,6 +17,7 @@
 
 var fs = require('fs');
 var when = require('when');
+var extend = require('xtend');
 var path = require('path');
 var ursa = require('ursa');
 var net = require('net');
@@ -41,8 +42,6 @@ var DeviceServer = function (options) {
     this._allCoresByID = {};
     this._attribsByID = {};
     this._allIDs = {};
-
-    this.ee = new EventEmitter();
 
     this.init();
 };
@@ -213,7 +212,9 @@ DeviceServer.prototype = {
                         _cores[key] = core;
                         core.on('ready', function () {
                             logger.log("Core online!");
+
                             var coreid = this.getHexCoreID();
+
                             that._allCoresByID[coreid] = core;
                             that._attribsByID[coreid] = that._attribsByID[coreid] || {
                                 coreID: coreid,
@@ -223,12 +224,20 @@ DeviceServer.prototype = {
                                 firmware_version: this.product_firmware_version
                             };
 
-                            setTimeout(function() {
-                              that.ee.emit('dev:connect', that._attribsByID[coreid]);
-                            }, 0);
+                            var data = that._attribsByID[coreid];
+                            data._conn_key = core._connection_key;
+
+                            that.emit('connect', data);
                         });
+
                         core.on('disconnect', function (msg) {
                             logger.log("Session ended for " + core._connection_key);
+
+                            var data = that._attribsByID[core.coreID];
+                            data._conn_key = core._connection_key;
+
+                            that.emit('disconnect', data);
+
                             delete _cores[key];
                         });
                     }
@@ -287,4 +296,7 @@ DeviceServer.prototype = {
     }
 
 };
+
+DeviceServer.prototype = extend(DeviceServer.prototype, EventEmitter.prototype);
+
 module.exports = DeviceServer;
