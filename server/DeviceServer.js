@@ -233,8 +233,11 @@ DeviceServer.prototype = {
                         core.on('disconnect', function (msg) {
                             logger.log("Session ended for " + core._connection_key);
 
-                            var data = that._attribsByID[core.coreID];
-                            data._conn_key = core._connection_key;
+                            var data = null;
+                            if(that._attribsByID.hasOwnProperty(core.coreID)) {
+                              data = that._attribsByID[core.coreID];
+                              data._conn_key = core._connection_key;
+                            }
 
                             that.emit('disconnect', data);
 
