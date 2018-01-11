@@ -215,8 +215,7 @@ DeviceServer.prototype = {
 
                             var coreid = this.getHexCoreID();
 
-                            that._allCoresByID[coreid] = core;
-                            that._attribsByID[coreid] = that._attribsByID[coreid] || {
+                            var deviceInfo = {
                                 coreID: coreid,
                                 name: null,
                                 ip: this.getRemoteIPAddress(),
@@ -224,10 +223,14 @@ DeviceServer.prototype = {
                                 firmware_version: this.product_firmware_version
                             };
 
+                            that._allCoresByID[coreid] = core;
+                            that._attribsByID[coreid] = that._attribsByID[coreid] || deviceInfo;
+
                             var data = that._attribsByID[coreid];
                             data._conn_key = core._connection_key;
+                            deviceInfo._conn_key = data._conn_key;
 
-                            that.emit('connect', data);
+                            that.emit('connect', deviceInfo);
                         });
 
                         core.on('disconnect', function (msg) {
@@ -291,11 +294,13 @@ DeviceServer.prototype = {
         //
         //  Wait for the keys to be ready, then start accepting connections
         //
+      return new Promise(function(resolve, reject) {
         server.listen(settings.PORT, function () {
-            logger.log("server started", { host: settings.HOST, port: settings.PORT });
+          const info = { host: settings.HOST, port: settings.PORT };
+          logger.log("server started", info);
+          resolve(info);
         });
-
-
+      });
     }
 
 };
